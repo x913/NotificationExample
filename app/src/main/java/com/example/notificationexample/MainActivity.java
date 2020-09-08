@@ -7,20 +7,28 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String PRIMARY_CHANNEL_ID = "primary_notification_channel";
-    private NotificationManager mNotificationManager;
     private static final int NOTIFICATION_ID = 0;
+
+    public static final String ACTION_UPDATE_NOTIFICATION = "com.notificationexample.ACTION_UPDATE_NOTIFICATION";
+
+    private NotificationManager mNotificationManager;
+    private NotificationReceiver mReceiver = new NotificationReceiver();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         createNotificationChannel();
+        registerReceiver(mReceiver, new IntentFilter(ACTION_UPDATE_NOTIFICATION));
 
         findViewById(R.id.update).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -49,6 +58,12 @@ public class MainActivity extends AppCompatActivity {
                 sendNotification();
             }
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        unregisterReceiver(mReceiver);
+        super.onDestroy();
     }
 
     private void updateNotification() {
@@ -93,8 +108,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sendNotification() {
+        Intent updateIntent = new Intent(ACTION_UPDATE_NOTIFICATION);
+        PendingIntent updatePendingIntent = PendingIntent.getBroadcast(this, NOTIFICATION_ID, updateIntent, PendingIntent.FLAG_ONE_SHOT);
+
         NotificationCompat.Builder notificationBuilder = getNotificationBuilder();
+        notificationBuilder.addAction(R.drawable.ic_update, "Update Notification", updatePendingIntent);
         mNotificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+    }
+
+
+    public class NotificationReceiver extends BroadcastReceiver {
+
+        public NotificationReceiver() {
+
+        }
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // TODO: This method is called when the BroadcastReceiver is receiving
+            // an Intent broadcast.
+            Log.d("AAA", "NotificationReceiver");
+            updateNotification();
+        }
     }
 
 }
