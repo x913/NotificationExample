@@ -26,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int NOTIFICATION_ID = 0;
 
     public static final String ACTION_UPDATE_NOTIFICATION = "com.notificationexample.ACTION_UPDATE_NOTIFICATION";
+    public static final String ACTION_DELETE_NOTIFICATION = "com.notificationexample.ACTION_DELETE_NOTIFICATION";
+    public static final String ACTION_LEARNMORE_NOTIFICATION = "com.notificationexample.ACTION_LEARNMORE_NOTIFICATION";
 
     private NotificationManager mNotificationManager;
     private NotificationReceiver mReceiver = new NotificationReceiver();
@@ -36,7 +38,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         createNotificationChannel();
+
         registerReceiver(mReceiver, new IntentFilter(ACTION_UPDATE_NOTIFICATION));
+        registerReceiver(mReceiver, new IntentFilter(ACTION_LEARNMORE_NOTIFICATION));
+        registerReceiver(mReceiver, new IntentFilter(ACTION_DELETE_NOTIFICATION));
 
         findViewById(R.id.update).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -107,13 +112,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void sendNotification() {
-        Intent updateIntent = new Intent(ACTION_UPDATE_NOTIFICATION);
-        PendingIntent updatePendingIntent = PendingIntent.getBroadcast(this, NOTIFICATION_ID, updateIntent, PendingIntent.FLAG_ONE_SHOT);
+    private PendingIntent buildIntentForBroadcast(String action, int notificationId, int flag) {
+        Intent intent = new Intent(action);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, notificationId, intent, flag);
+        return pendingIntent;
+    }
 
+    public void sendNotification() {
         NotificationCompat.Builder notificationBuilder = getNotificationBuilder();
+
+        PendingIntent updatePendingIntent = buildIntentForBroadcast(ACTION_UPDATE_NOTIFICATION, NOTIFICATION_ID, PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent learnMorePendingIntent = buildIntentForBroadcast(ACTION_LEARNMORE_NOTIFICATION, NOTIFICATION_ID, PendingIntent.FLAG_ONE_SHOT);
+
         notificationBuilder.addAction(R.drawable.ic_update, "Update Notification", updatePendingIntent);
+        notificationBuilder.addAction(R.drawable.ic_update, "Learn more", learnMorePendingIntent);
+
+        notificationBuilder.setDeleteIntent( buildIntentForBroadcast(ACTION_DELETE_NOTIFICATION, NOTIFICATION_ID, PendingIntent.FLAG_ONE_SHOT) );
+
         mNotificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+
+        Log.d("AAA", "sendNotification");
     }
 
 
@@ -127,8 +145,24 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             // TODO: This method is called when the BroadcastReceiver is receiving
             // an Intent broadcast.
-            Log.d("AAA", "NotificationReceiver");
-            updateNotification();
+            //Log.d("AAA", "NotificationReceiver");
+
+            String action = intent.getAction();
+            switch (action) {
+                case MainActivity.ACTION_LEARNMORE_NOTIFICATION:
+                    Log.d("AAA", "Learn more");
+                    cancelNotification();
+                    break;
+                case MainActivity.ACTION_UPDATE_NOTIFICATION:
+                    Log.d("AAA", "Update");
+                    updateNotification();
+                    break;
+                case MainActivity.ACTION_DELETE_NOTIFICATION:
+                    Log.d("AAA", "DELETE");
+                    break;
+            }
+
+
         }
     }
 
